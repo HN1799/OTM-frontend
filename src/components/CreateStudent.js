@@ -4,6 +4,7 @@ import axios from 'axios';
 const CreateStudent = () => {
   const [name, setName] = useState('');
   const [rollNumber, setRollNumber] = useState('');
+  const [password, setPassword] = useState(''); // Added state for password
   const [response, setResponse] = useState(null);
   const [error, setError] = useState(null);
 
@@ -13,6 +14,7 @@ const CreateStudent = () => {
       const res = await axios.post('http://localhost:8080/api/admin/createStudent', {
         name,
         rollNumber,
+        password, // Added password to request payload
       });
       setResponse(res.data);
       setError(null);
@@ -41,6 +43,15 @@ const CreateStudent = () => {
             type="text"
             value={rollNumber}
             onChange={(e) => setRollNumber(e.target.value)}
+            required
+          />
+        </div>
+        <div>
+          <label>Password:</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             required
           />
         </div>

@@ -1,26 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 
 const TakeTest = () => {
+    const [testId, setTestId] = useState('');
+    const [studentId, setStudentId] = useState('');
     const [test, setTest] = useState(null);
     const [error, setError] = useState(null);
     const [answers, setAnswers] = useState({});
     const [submitResult, setSubmitResult] = useState(null);
 
-    useEffect(() => {
-        const fetchTest = async () => {
-            try {
-                const response = await axios.get('http://localhost:8080/api/student/tests/1');
-                setTest(response.data);
-                initializeAnswers(response.data.questions); // Initialize answers state with empty values
-            } catch (error) {
-                setError('Failed to fetch test details.');
-            }
-        };
+    // Function to handle fetching test details based on test ID
+    const fetchTest = async () => {
+        try {
+            const response = await axios.get(`http://localhost:8080/api/student/tests/${testId}`);
+            setTest(response.data);
+            initializeAnswers(response.data.questions); // Initialize answers state with empty values
+            setError(null);
+        } catch (error) {
+            setError('Failed to fetch test details.');
+        }
+    };
 
-        fetchTest();
-    }, []);
-
+    // Function to initialize answers state with empty values
     const initializeAnswers = (questions) => {
         const initialAnswers = {};
         questions.forEach(question => {
@@ -29,58 +30,71 @@ const TakeTest = () => {
         setAnswers(initialAnswers);
     };
 
+    // Function to handle changes in selected answers
     const handleAnswerChange = (questionText, selectedOption) => {
         setAnswers({ ...answers, [questionText]: selectedOption });
     };
 
+    // Function to handle test submission
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const answerValues = Object.values(answers);
-
         try {
-            const response = await axios.post(`http://localhost:8080/api/student/submitTest/${test.id}?rollNumber=12345`, answerValues);
+            const answerValues = Object.values(answers);
+            const response = await axios.post(`http://localhost:8080/api/student/submitTest/${testId}?rollNumber=${studentId}`, answerValues);
             setSubmitResult(response.data);
         } catch (error) {
             setError('Failed to submit test.');
         }
     };
 
-    if (error) {
-        return <div>Error: {error}</div>;
-    }
-
-    if (!test) {
-        return <div>Loading...</div>;
-    }
-
     return (
         <div className="container">
-            <h1>Take Test - {test.subject}</h1>
-            <form onSubmit={handleSubmit}>
-                <h2>Questions:</h2>
-                {test.questions.map((question, index) => (
-                    <div key={index}>
-                        <h3>{question.questionText}</h3>
-                        <div>
-                            {question.options.map((option, optIndex) => (
-                                <div key={optIndex}>
-                                    <label>
-                                        <input
-                                            type="radio"
-                                            value={option}
-                                            checked={answers[question.questionText] === option}
-                                            onChange={() => handleAnswerChange(question.questionText, option)}
-                                        />
-                                        {option}
-                                    </label>
+            <h1>Take Test</h1>
+            <div>
+                <input
+                    type="text"
+                    placeholder="Enter Test ID"
+                    value={testId}
+                    onChange={(e) => setTestId(e.target.value)}
+                />
+                <input
+                    type="text"
+                    placeholder="Enter Student ID"
+                    value={studentId}
+                    onChange={(e) => setStudentId(e.target.value)}
+                />
+                <button onClick={fetchTest}>Fetch Test</button>
+            </div>
+            {error && <div className="error">{error}</div>}
+            {test && (
+                <div>
+                    <h2>Test: {test.subject}</h2>
+                    <form onSubmit={handleSubmit}>
+                        {test.questions.map((question, index) => (
+                            <div key={index}>
+                                <h3>{question.questionText}</h3>
+                                <div>
+                                    {question.options.map((option, optIndex) => (
+                                        <div key={optIndex}>
+                                            <label>
+                                                <input
+                                                    type="radio"
+                                                    value={option}
+                                                    checked={answers[question.questionText] === option}
+                                                    onChange={() => handleAnswerChange(question.questionText, option)}
+                                                />
+                                                {option}
+                                            </label>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
-                    </div>
-                ))}
-                <br />
-                <button type="submit">Submit Test</button>
-            </form>
+                            </div>
+                        ))}
+                        <br />
+                        <button type="submit">Submit Test</button>
+                    </form>
+                </div>
+            )}
             {submitResult && (
                 <div>
                     <h2>Submission Result:</h2>
